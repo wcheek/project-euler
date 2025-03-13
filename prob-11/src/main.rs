@@ -1,23 +1,17 @@
-use std::fs;
+use std::{error::Error, fs};
 
-fn get_num_grid() -> Vec<Vec<u32>> {
+fn get_num_grid() -> Result<Vec<Vec<u32>>, Box<dyn Error>> {
     let mut grid: Vec<Vec<u32>> = vec![];
-    if let Ok(input) = fs::read_to_string("input.txt") {
-        for line in input.lines() {
-            let mut this_row = vec![];
-            for num in line.split_whitespace() {
-                if let Ok(num) = num.parse::<u32>() {
-                    this_row.push(num);
-                } else {
-                    panic!("Could not parse num");
-                }
-            }
-            grid.push(this_row);
+    let input = fs::read_to_string("input.txt")?;
+    for line in input.lines() {
+        let mut this_row = vec![];
+        for num in line.split_whitespace() {
+            let num = num.parse::<u32>()?;
+            this_row.push(num);
         }
-    } else {
-        panic!("Could not read input");
+        grid.push(this_row);
     }
-    grid
+    Ok(grid)
 }
 
 fn main() {
@@ -30,7 +24,7 @@ mod test {
 
     #[test]
     fn test_get_num_grid() {
-        let grid = get_num_grid();
+        let grid = get_num_grid().unwrap();
 
         assert_eq!(grid.len(), 20);
         assert_eq!(grid[0].len(), 20);
