@@ -3,8 +3,8 @@ use std::fs;
 const NUM_DIGITS: usize = 50;
 const NUM_NUMBERS: usize = 100;
 
-fn read_numbers() -> String {
-    fs::read_to_string("input.txt").unwrap()
+fn read_numbers(path: &str) -> String {
+    fs::read_to_string(path).unwrap()
 }
 
 fn create_num_array(input: String) -> [[u16; NUM_DIGITS]; NUM_NUMBERS] {
@@ -20,20 +20,46 @@ fn create_num_array(input: String) -> [[u16; NUM_DIGITS]; NUM_NUMBERS] {
     num_array
 }
 
-fn get_sum_by_digit(num_array: [[u16; NUM_DIGITS]; NUM_NUMBERS]) -> [u16; NUM_NUMBERS] {
-    let mut sum_num_array = [0; NUM_NUMBERS];
+fn get_sum_by_digit(num_array: [[u16; NUM_DIGITS]; NUM_NUMBERS]) -> [u16; NUM_DIGITS] {
+    let mut sum_num_array = [0; NUM_DIGITS];
     for digit in 0..NUM_DIGITS {
-        let mut total_for_digit = 0;
-        for num in 0..NUM_NUMBERS {
-            total_for_digit += num_array[num][digit];
-        }
-        sum_num_array[digit] = total_for_digit;
+        sum_num_array[digit] = num_array.iter().map(|num| num[digit]).sum::<u16>();
     }
     sum_num_array
 }
 
+fn propagate_sums(mut sum_num_array: [u16; NUM_DIGITS]) -> Vec<u16> {
+    sum_num_array.reverse();
+    let mut quotient = 0;
+    let mut my_number = vec![];
+    for (digit, value) in sum_num_array.iter().enumerate() {
+        if digit + 1 == NUM_DIGITS {
+            let mut remainder = *value + quotient;
+            while remainder > 10 {
+                my_number.push(remainder % 10);
+                remainder /= 10
+            }
+            my_number.push(remainder);
+        } else {
+            let with_carry_over = value + quotient;
+            let remainder = with_carry_over % 10;
+            quotient = with_carry_over / 10;
+            my_number.push(remainder);
+        }
+    }
+    my_number.reverse();
+    my_number
+}
+
 fn main() {
-    println!("Hello, world!");
+    let input = read_numbers("input.txt");
+    let num_array = create_num_array(input);
+    let sum_by_digit = get_sum_by_digit(num_array);
+    let result = propagate_sums(sum_by_digit);
+    println!(
+        "{:?}",
+        &result.iter().map(|num| num.to_string()).collect::<String>()[0..10]
+    );
 }
 
 #[cfg(test)]
@@ -42,7 +68,7 @@ mod test {
 
     #[test]
     fn test_create_num_array() {
-        let input = read_numbers();
+        let input = read_numbers("input.txt");
         let num_array = create_num_array(input);
 
         assert_eq!(num_array[0][11], 9);
@@ -53,10 +79,23 @@ mod test {
     #[test]
     fn test_get_sum_by_digit() {
         let expected = 476;
-        let input = read_numbers();
+        let input = read_numbers("input.txt");
         let num_array = create_num_array(input);
         let result = get_sum_by_digit(num_array);
 
         assert_eq!(result[25], expected);
+    }
+
+    #[test]
+    fn test_propagate_sums() {
+        let input = read_numbers("input.txt");
+        let num_array = create_num_array(input);
+        let sum_by_digit = get_sum_by_digit(num_array);
+        let mut result = propagate_sums(sum_by_digit);
+
+        println!("{:?}", sum_by_digit);
+        println!("{:?}", result);
+
+        assert_eq!(result.pop().unwrap(), 2);
     }
 }
